@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asuntoanalyytikko – Kassavirtalaskuri ja sijoitusanalyysi</title>
+<meta name="description" content="Analysoi sijoitusasunto sekunnissa. Kassavirtalaskelma, vuokrausriski-indeksi, remonttiriski ja kaavoitusdata automaattisesti yhdestä URL:sta.">
+<meta name="keywords" content="asuntosijoittaminen, kassavirtalaskuri, vuokratuotto laskuri, sijoitusasunto analytiikka, kassavirta asunto">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://www.asuntoanalyytikko.fi/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.asuntoanalyytikko.fi/">
+<meta property="og:title" content="Asuntoanalyytikko – Kassavirtalaskuri ja sijoitusanalyysi">
+<meta property="og:description" content="Liitä asuntoilmoituksen URL – saat kassavirtalaskelman, vuokrausriskianalyysin, remonttiriskiarvion ja kaavoitustilanteen automaattisesti.">
+<meta property="og:locale" content="fi_FI">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Asuntoanalyytikko – Kassavirtalaskuri ja sijoitusanalyysi">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Asuntoanalyytikko","description":"Sijoitusasunnon analytiikkatyökalu. Kassavirtalaskelma, vuokrausriski-indeksi, remonttiriski ja kaavoitusdata automaattisesti.","url":"https://www.asuntoanalyytikko.fi","applicationCategory":"FinanceApplication","operatingSystem":"Web","inLanguage":"fi"}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── RESET & BASE ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body { font-family: 'DM Sans', -apple-system, sans-serif; background: #f5f3ee; color: #1a1a18; -webkit-font-smoothing: antialiased; }
+img { max-width: 100%; display: block; }
+
+/* ── TOKENS ── */
+:root {
+  --ink: #1a1a18;
+  --paper: #f5f3ee;
+  --paper2: #ede9e1;
+  --paper3: #e4e0d8;
+  --muted: #5f5e5a;
+  --hint: #9a9890;
+  --green: #1a7a5a;
+  --green-light: #e8f4ee;
+  --green-bright: #4ecf9e;
+  --red-bright: #f07060;
+  --border: rgba(26,26,24,0.1);
+  --border2: rgba(26,26,24,0.18);
+  --serif: 'DM Serif Display', Georgia, serif;
+  --mono: 'DM Mono', 'Courier New', monospace;
+  --sans: 'DM Sans', sans-serif;
+  --r4: 4px; --r8: 8px; --r12: 12px;
+}
+
+/* ── NAV ── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 58px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 clamp(20px, 5vw, 56px);
+  background: rgba(245,243,238,0.94); backdrop-filter: blur(14px);
+  border-bottom: 0.5px solid var(--border);
+}
+.nav-logo { font-family: var(--serif); font-size: 17px; color: var(--ink); letter-spacing: -0.01em; text-decoration: none; }
+.nav-logo em { font-style: italic; color: var(--green); }
+.nav-right { display: flex; align-items: center; gap: 28px; }
+.nav-link { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.15s; }
+.nav-link:hover { color: var(--ink); }
+.nav-btn { font-size: 13px; font-weight: 500; background: var(--ink); color: var(--paper); padding: 8px 18px; border-radius: var(--r4); text-decoration: none; transition: background 0.2s; border: none; cursor: pointer; font-family: var(--sans); }
+.nav-btn:hover { background: var(--green); }
+@media (max-width: 600px) { .nav-link { display: none; } }
+
+/* ── TICKER ── */
+.ticker-wrap { background: var(--ink); overflow: hidden; padding: 9px 0; }
+.ticker-track { display: flex; white-space: nowrap; animation: ticker 32s linear infinite; }
+@keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.tick { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,0.4); padding: 0 22px; border-right: 1px solid rgba(255,255,255,0.08); }
+.tick-pos { color: var(--green-bright); }
+.tick-neg { color: var(--red-bright); }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh; padding: 100px clamp(20px,5vw,56px) 64px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;
+  background: var(--paper);
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 55% 60% at 65% 45%, rgba(26,122,90,0.07) 0%, transparent 65%),
+    repeating-linear-gradient(0deg, transparent, transparent 47px, var(--border) 48px),
+    repeating-linear-gradient(90deg, transparent, transparent 47px, var(--border) 48px);
+  opacity: 0.6; pointer-events: none;
+}
+.hero-left { position: relative; z-index: 1; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--green); margin-bottom: 20px;
+}
+.hero-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--green); }
+.hero-h1 {
+  font-family: var(--serif); font-size: clamp(38px, 5.5vw, 68px);
+  line-height: 1.04; letter-spacing: -0.03em; color: var(--ink);
+  margin-bottom: 18px;
+}
+.hero-h1 em { font-style: italic; color: var(--green); }
+.hero-sub {
+  font-size: clamp(15px, 1.6vw, 17px); color: var(--muted); line-height: 1.7;
+  max-width: 440px; margin-bottom: 32px; font-weight: 300;
+}
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+.btn-primary {
+  font-size: 14px; font-weight: 500; background: var(--green); color: #fff;
+  padding: 13px 24px; border-radius: var(--r4); border: none; cursor: pointer;
+  font-family: var(--sans); text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+  transition: all 0.2s;
+}
+.btn-primary:hover { background: #155e46; transform: translateY(-1px); box-shadow: 0 4px 18px rgba(26,122,90,0.28); }
+.btn-outline {
+  font-size: 14px; color: var(--ink); padding: 13px 24px; border-radius: var(--r4);
+  border: 1px solid var(--border2); background: transparent; cursor: pointer;
+  font-family: var(--sans); text-decoration: none; transition: all 0.15s;
+}
+.btn-outline:hover { background: var(--paper2); border-color: var(--ink); }
+.hero-note { font-family: var(--mono); font-size: 11px; color: var(--hint); line-height: 1.8; }
+
+/* HERO TERMINAL */
+.hero-right { position: relative; z-index: 1; }
+.hero-terminal {
+  background: #161614; border-radius: var(--r12);
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: 0 32px 64px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.2);
+  overflow: hidden; font-family: var(--mono);
+}
+.ht-bar {
+  background: #1e1e1b; padding: 10px 14px; display: flex; align-items: center; gap: 7px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.ht-dot { width: 9px; height: 9px; border-radius: 50%; }
+.ht-bar-url { font-size: 11px; color: rgba(255,255,255,0.2); margin-left: 8px; flex: 1; text-align: center; }
+.ht-bar-url span { color: rgba(255,255,255,0.5); }
+.ht-body { padding: 14px; }
+.ht-label { font-size: 10px; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+.ht-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
+.ht-kpi { background: #1e1e1b; border: 0.5px solid rgba(255,255,255,0.05); border-radius: 4px; padding: 8px 10px; }
+.ht-kpi-l { font-size: 9px; color: rgba(255,255,255,0.22); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 3px; }
+.ht-kpi-v { font-size: 16px; font-weight: 500; }
+.ht-kpi-v.p { color: var(--green-bright); }
+.ht-kpi-v.n { color: var(--red-bright); }
+.ht-kpi-v.w { color: rgba(255,255,255,0.75); }
+.ht-divider { height: 0.5px; background: rgba(255,255,255,0.05); margin: 10px 0; }
+.ht-row { display: flex; justify-content: space-between; font-size: 11px; padding: 4px 0; border-bottom: 0.5px solid rgba(255,255,255,0.04); }
+.ht-row:last-child { border-bottom: none; }
+.ht-rl { color: rgba(255,255,255,0.28); }
+.ht-rv { color: rgba(255,255,255,0.6); }
+.ht-rv.p { color: var(--green-bright); }
+.ht-total { display: flex; justify-content: space-between; font-size: 13px; padding-top: 8px; margin-top: 4px; border-top: 0.5px solid rgba(255,255,255,0.1); }
+.ht-total-l { color: rgba(255,255,255,0.5); }
+.ht-bar-row { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+.ht-bar-row:last-child { margin-bottom: 0; }
+.ht-bl { font-size: 10px; color: rgba(255,255,255,0.25); width: 78px; flex-shrink: 0; }
+.ht-bt { flex: 1; height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; }
+.ht-bf { height: 100%; border-radius: 2px; }
+.ht-bv { font-size: 10px; color: rgba(255,255,255,0.35); width: 22px; text-align: right; }
+.ht-two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.ht-card { background: #1e1e1b; border: 0.5px solid rgba(255,255,255,0.05); border-radius: 4px; padding: 10px 12px; }
+.ht-card-t { font-size: 9px; color: rgba(255,255,255,0.22); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+.ht-ai { margin-top: 10px; background: #1e1e1b; border: 0.5px solid rgba(26,122,90,0.3); border-radius: 4px; padding: 10px 12px; }
+.ht-ai-label { font-size: 9px; color: rgba(78,207,158,0.6); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
+.ht-ai-text { font-size: 11px; color: rgba(255,255,255,0.45); line-height: 1.6; font-family: var(--sans); }
+
+@media (max-width: 900px) {
+  .hero { grid-template-columns: 1fr; padding-top: 88px; }
+  .hero-right { display: none; }
+}
+
+/* ── SECTIONS SHARED ── */
+.section { padding: clamp(48px, 7vw, 80px) clamp(20px,5vw,56px); }
+.section-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--hint); margin-bottom: 8px; }
+.section-h { font-family: var(--serif); font-size: clamp(26px, 3.5vw, 42px); line-height: 1.1; margin-bottom: 10px; letter-spacing: -0.02em; }
+.section-sub { font-size: 15px; color: var(--muted); line-height: 1.7; font-weight: 300; max-width: 520px; margin-bottom: 36px; }
+
+/* ── FEATURES ── */
+.features { background: var(--paper2); }
+.feat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); }
+.feat-item { background: var(--paper2); padding: 22px; transition: background 0.15s; }
+.feat-item:hover { background: var(--paper3); }
+.feat-icon { font-size: 22px; margin-bottom: 12px; }
+.feat-title { font-family: var(--serif); font-size: 19px; margin-bottom: 7px; line-height: 1.2; }
+.feat-desc { font-size: 13px; color: var(--muted); line-height: 1.65; }
+.feat-tag { display: inline-block; margin-top: 10px; font-family: var(--mono); font-size: 9px; background: var(--green-light); color: var(--green); padding: 2px 8px; border-radius: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* ── HOW ── */
+.how { background: var(--paper); }
+.steps { max-width: 640px; position: relative; }
+.steps::before { content: ''; position: absolute; left: 26px; top: 52px; bottom: 52px; width: 1px; background: var(--border2); }
+.step { display: flex; gap: 22px; padding: 20px 0; }
+.step-num { width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--border2); background: var(--paper); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 16px; font-weight: 500; flex-shrink: 0; position: relative; z-index: 1; }
+.step-body { padding-top: 10px; }
+.step-title { font-family: var(--serif); font-size: 21px; margin-bottom: 5px; }
+.step-desc { font-size: 14px; color: var(--muted); line-height: 1.7; }
+.step-mono { font-family: var(--mono); font-size: 11px; color: var(--green); margin-top: 6px; }
+
+/* ── PRICING ── */
+.pricing { background: var(--paper2); }
+.price-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); }
+.price-card { background: var(--paper2); padding: 24px; }
+.price-card.featured { background: var(--ink); }
+.price-plan { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--hint); margin-bottom: 8px; }
+.featured .price-plan { color: rgba(255,255,255,0.3); }
+.price-badge { display: inline-block; font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; background: var(--green); color: #fff; padding: 2px 8px; border-radius: 2px; margin-bottom: 8px; }
+.price-num { font-family: var(--serif); font-size: 44px; line-height: 1; color: var(--ink); }
+.featured .price-num { color: #fff; }
+.price-per { font-size: 12px; color: var(--hint); margin-bottom: 18px; }
+.featured .price-per { color: rgba(255,255,255,0.3); }
+.price-feats { list-style: none; margin-bottom: 20px; }
+.price-feats li { font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--border); color: var(--muted); display: flex; gap: 8px; line-height: 1.5; }
+.featured .price-feats li { border-bottom-color: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); }
+.price-feats li::before { content: '—'; color: var(--green); font-family: var(--mono); flex-shrink: 0; }
+.price-btn { width: 100%; padding: 12px; border-radius: var(--r4); font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--border2); background: transparent; color: var(--ink); font-family: var(--sans); transition: all 0.15s; }
+.price-btn:hover { background: var(--paper3); }
+.featured .price-btn { background: var(--green); color: #fff; border-color: transparent; }
+.featured .price-btn:hover { background: #155e46; }
+.price-footnote { text-align: center; font-family: var(--mono); font-size: 10px; color: var(--hint); margin-top: 16px; }
+
+/* ── SIGNUP ── */
+.signup { background: var(--ink); padding: clamp(56px,8vw,96px) clamp(20px,5vw,56px); text-align: center; position: relative; overflow: hidden; }
+.signup::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(26,122,90,0.18) 0%, transparent 70%); pointer-events: none; }
+.signup-inner { position: relative; z-index: 1; max-width: 500px; margin: 0 auto; }
+.signup-counter { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 7px 18px; font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 24px; }
+.signup-counter-num { font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--green-bright); }
+.signup-counter-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green-bright); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+.signup-h { font-family: var(--serif); font-size: clamp(28px, 4vw, 46px); color: #fff; line-height: 1.1; margin-bottom: 10px; letter-spacing: -0.02em; }
+.signup-h em { font-style: italic; color: var(--green-bright); }
+.signup-sub { font-size: 15px; color: rgba(255,255,255,0.4); margin-bottom: 24px; font-weight: 300; line-height: 1.6; }
+.signup-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.signup-input { flex: 1; font-size: 14px; padding: 13px 16px; border-radius: var(--r4); border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: #fff; outline: none; font-family: var(--sans); transition: border-color 0.15s; }
+.signup-input:focus { border-color: var(--green-bright); }
+.signup-input::placeholder { color: rgba(255,255,255,0.22); }
+.signup-btn { font-size: 13px; font-weight: 500; background: var(--green); color: #fff; padding: 13px 22px; border-radius: var(--r4); border: none; cursor: pointer; white-space: nowrap; font-family: var(--sans); transition: background 0.2s; }
+.signup-btn:hover { background: #155e46; }
+.signup-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.signup-note { font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.2); }
+.signup-success { display: none; background: rgba(78,207,158,0.08); border: 1px solid rgba(78,207,158,0.25); border-radius: var(--r8); padding: 18px 22px; }
+.signup-success strong { display: block; font-size: 16px; color: var(--green-bright); margin-bottom: 5px; }
+.signup-success p { font-size: 13px; color: rgba(255,255,255,0.45); }
+.signup-error { display: none; background: rgba(240,112,96,0.1); border: 1px solid rgba(240,112,96,0.25); border-radius: var(--r4); padding: 10px 14px; margin-top: 8px; font-size: 13px; color: var(--red-bright); }
+@media (max-width: 500px) { .signup-row { flex-direction: column; } }
+
+/* ── TESTIMONIALS ── */
+.testimonials { background: var(--paper); padding: clamp(40px,6vw,64px) clamp(20px,5vw,56px); border-top: 1px solid var(--border); }
+.testi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 32px; }
+.testi-item { background: var(--paper2); border: 1px solid var(--border); border-radius: var(--r8); padding: 20px; }
+.testi-stars { color: #c8a040; font-size: 12px; margin-bottom: 10px; }
+.testi-quote { font-family: var(--serif); font-size: 15px; line-height: 1.6; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.testi-author { font-family: var(--mono); font-size: 11px; color: var(--hint); }
+
+/* ── FOOTER ── */
+footer { background: var(--ink); border-top: 1px solid rgba(255,255,255,0.06); padding: 24px clamp(20px,5vw,56px); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.footer-logo { font-family: var(--serif); font-size: 15px; color: rgba(255,255,255,0.4); }
+.footer-links { display: flex; gap: 20px; }
+.footer-links a { font-size: 12px; color: rgba(255,255,255,0.25); text-decoration: none; font-family: var(--mono); transition: color 0.15s; }
+.footer-links a:hover { color: rgba(255,255,255,0.5); }
+.footer-copy { font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,0.15); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+.hero-left > * { animation: fadeUp 0.55s ease both; }
+.hero-eyebrow { animation-delay: 0.05s; }
+.hero-h1      { animation-delay: 0.12s; }
+.hero-sub     { animation-delay: 0.20s; }
+.hero-actions { animation-delay: 0.28s; }
+.hero-note    { animation-delay: 0.36s; }
+.hero-right   { animation: fadeUp 0.7s 0.3s ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="#" class="nav-logo">Asunto<em>analyytikko</em></a>
+  <div class="nav-right">
+    <a href="#features" class="nav-link">Ominaisuudet</a>
+    <a href="#pricing" class="nav-link">Hinnoittelu</a>
+    <button class="nav-btn" onclick="document.getElementById('signup').scrollIntoView({behavior:'smooth'})">Ilmoittaudu →</button>
+  </div>
+</nav>
+
+<!-- TICKER -->
+<div class="ticker-wrap" style="margin-top:58px">
+  <div class="ticker-track">
+    <span class="tick">Kallio, HKI &nbsp;<span class="tick-pos">+5,2 % tuotto</span></span>
+    <span class="tick">Hervanta, TRE &nbsp;<span class="tick-pos">+6,1 % tuotto</span></span>
+    <span class="tick">Mellunkylä, HKI &nbsp;<span class="tick-neg">−85 € kassavirta/kk</span></span>
+    <span class="tick">Pasila, HKI &nbsp;<span class="tick-pos">Remonttiriski: matala</span></span>
+    <span class="tick">Centrum, TKU &nbsp;<span class="tick-pos">Vuokrausriski: 76/100</span></span>
+    <span class="tick">Kaleva, TRE &nbsp;<span class="tick-pos">+4,8 % tuotto</span></span>
+    <span class="tick">Linnanmaa, OUL &nbsp;<span class="tick-pos">Opiskelijakysyntä: korkea</span></span>
+    <span class="tick">Runosmäki, TKU &nbsp;<span class="tick-neg">Korkea vuokrausriski</span></span>
+    <span class="tick">Kallio, HKI &nbsp;<span class="tick-pos">+5,2 % tuotto</span></span>
+    <span class="tick">Hervanta, TRE &nbsp;<span class="tick-pos">+6,1 % tuotto</span></span>
+    <span class="tick">Mellunkylä, HKI &nbsp;<span class="tick-neg">−85 € kassavirta/kk</span></span>
+    <span class="tick">Pasila, HKI &nbsp;<span class="tick-pos">Remonttiriski: matala</span></span>
+    <span class="tick">Centrum, TKU &nbsp;<span class="tick-pos">Vuokrausriski: 76/100</span></span>
+    <span class="tick">Kaleva, TRE &nbsp;<span class="tick-pos">+4,8 % tuotto</span></span>
+    <span class="tick">Linnanmaa, OUL &nbsp;<span class="tick-pos">Opiskelijakysyntä: korkea</span></span>
+    <span class="tick">Runosmäki, TKU &nbsp;<span class="tick-neg">Korkea vuokrausriski</span></span>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow">Sijoittajan terminaali</div>
+    <h1 class="hero-h1">Jokainen kohde.<br><em>Sekunnissa</em> analysoitu.</h1>
+    <p class="hero-sub">Liitä asuntoilmoituksen URL – saat kassavirtalaskelman, vuokrausriskianalyysin, remonttiriskiarvion ja kaavoitustilanteen automaattisesti.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="document.getElementById('signup').scrollIntoView({behavior:'smooth'})">Ilmoittaudu kiinnostuneeksi →</button>
+      <a href="#features" class="btn-outline">Katso ominaisuudet</a>
+    </div>
+    <p class="hero-note">
+      Toimii: Oikotie · Etuovi · Tori.fi · Vuokraovi · Huoneistokeskus<br>
+      Ilmainen kokeilu · Ei luottokorttia
+    </p>
+  </div>
+  <div class="hero-right">
+    <div class="hero-terminal">
+      <div class="ht-bar">
+        <div class="ht-dot" style="background:#ff5f56"></div>
+        <div class="ht-dot" style="background:#ffbd2e"></div>
+        <div class="ht-dot" style="background:#27c93f"></div>
+        <div class="ht-bar-url">oikotie.fi/myytavat-asunnot/<span>kallio/2h+k-52m2</span></div>
+      </div>
+      <div class="ht-body">
+        <div class="ht-label">Analyysi valmis · 3,2 s</div>
+        <div class="ht-kpis">
+          <div class="ht-kpi"><div class="ht-kpi-l">Hinta</div><div class="ht-kpi-v w">195 000 €</div></div>
+          <div class="ht-kpi"><div class="ht-kpi-l">Bruttotuotto</div><div class="ht-kpi-v p">5,4 %</div></div>
+          <div class="ht-kpi"><div class="ht-kpi-l">Kassavirta/kk</div><div class="ht-kpi-v p">+42 €</div></div>
+          <div class="ht-kpi"><div class="ht-kpi-l">Vuokrausriski</div><div class="ht-kpi-v p">82/100</div></div>
+          <div class="ht-kpi"><div class="ht-kpi-l">Remonttiriski</div><div class="ht-kpi-v n">28/100</div></div>
+          <div class="ht-kpi"><div class="ht-kpi-l">€/m²</div><div class="ht-kpi-v w">3 750 €</div></div>
+        </div>
+        <div class="ht-two">
+          <div class="ht-card">
+            <div class="ht-card-t">Kassavirta</div>
+            <div class="ht-row"><span class="ht-rl">Vuokra</span><span class="ht-rv p">+1 050 €</span></div>
+            <div class="ht-row"><span class="ht-rl">Vastike</span><span class="ht-rv">−285 €</span></div>
+            <div class="ht-row"><span class="ht-rl">Lyhennys</span><span class="ht-rv">−723 €</span></div>
+            <div class="ht-total"><span class="ht-total-l">Netto/kk</span><span style="color:var(--green-bright);font-size:14px">+42 €</span></div>
+          </div>
+          <div class="ht-card">
+            <div class="ht-card-t">Vuokrausriski</div>
+            <div class="ht-bar-row"><span class="ht-bl">Nopeus</span><div class="ht-bt"><div class="ht-bf" style="width:88%;background:var(--green-bright)"></div></div><span class="ht-bv">88</span></div>
+            <div class="ht-bar-row"><span class="ht-bl">Tarjonta</span><div class="ht-bt"><div class="ht-bf" style="width:78%;background:var(--green-bright)"></div></div><span class="ht-bv">78</span></div>
+            <div class="ht-bar-row"><span class="ht-bl">Vakaus</span><div class="ht-bt"><div class="ht-bf" style="width:84%;background:var(--green-bright)"></div></div><span class="ht-bv">84</span></div>
+            <div class="ht-bar-row"><span class="ht-bl">Vetovoima</span><div class="ht-bt"><div class="ht-bf" style="width:80%;background:var(--green-bright)"></div></div><span class="ht-bv">80</span></div>
+          </div>
+        </div>
+        <div class="ht-ai">
+          <div class="ht-ai-label">AI-analyysi</div>
+          <div class="ht-ai-text">Kallio on yksi Helsingin vahvimmista vuokramarkkina-alueista. Positiivinen kassavirta ja matala tyhjäkäyntiriski tekevät kohteesta kiinnostavan. Huomio: putkiremontti todennäköinen 5–10 v sisällä (arv. 15–25 k€).</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section features" id="features">
+  <div class="section-label">// Ominaisuudet</div>
+  <h2 class="section-h">Kaikki mitä sijoittaja tarvitsee</h2>
+  <p class="section-sub">Viisi analytiikkamoduulia yhdessä työkalussa – rakennettu asuntosijoittajille, ei portaalikäyttäjille.</p>
+  <div class="feat-grid">
+    <div class="feat-item"><div class="feat-icon">📊</div><div class="feat-title">Kassavirtalaskenta</div><p class="feat-desc">Automaattinen laskelma vuokrasta, vastikkeesta ja lainanlyhennyksestä. Säädä velkarahoitusta ja korkoa reaaliajassa.</p><span class="feat-tag">Avoin data</span></div>
+    <div class="feat-item"><div class="feat-icon">🏘️</div><div class="feat-title">Vuokrausriski-indeksi</div><p class="feat-desc">0–100 pistettä. Vuokrausnopeus, tarjonnan ja kysynnän tasapaino sekä alueen vetovoima yhdistettynä.</p><span class="feat-tag">Oma malli</span></div>
+    <div class="feat-item"><div class="feat-icon">🔨</div><div class="feat-title">Remonttiriski</div><p class="feat-desc">Rakennusvuoteen ja ilmoituksen tietoihin perustuva arvio – putki, julkisivu, katto – euroina per huoneisto.</p><span class="feat-tag">AI-parsinta</span></div>
+    <div class="feat-item"><div class="feat-icon">🗺️</div><div class="feat-title">Palvelut & kaavoitus</div><p class="feat-desc">Lähipalvelut etäisyyksineen, joukkoliikenneindeksi ja vireillä olevat kaavahankkeet alueella.</p><span class="feat-tag">Tilastokeskus</span></div>
+    <div class="feat-item"><div class="feat-icon">🔔</div><div class="feat-title">Kohdehälytykset</div><p class="feat-desc">Aseta kriteerit – kaupunki, max hinta, min tuotto. Saat sähköpostin heti kun sopiva kohde ilmestyy myyntiin.</p><span class="feat-tag">Reaaliaikainen</span></div>
+    <div class="feat-item"><div class="feat-icon">💼</div><div class="feat-title">Portfolio-näkymä</div><p class="feat-desc">Kaikki kohteet yhdessä. Kokonaiskassavirta, remonttikuorma ja vuokrausriski koko portfoliolle.</p><span class="feat-tag">Pro</span></div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section class="section how">
+  <div class="section-label">// Miten toimii</div>
+  <h2 class="section-h">Kolme askelta analyysiin</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Liitä URL</div>
+        <p class="step-desc">Kopioi minkä tahansa asuntoilmoitussivuston URL. Palvelu tunnistaa lähteen automaattisesti.</p>
+        <div class="step-mono">→ Oikotie · Etuovi · Tori.fi · Vuokraovi · Huoneistokeskus</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">AI analysoi sekunnissa</div>
+        <p class="step-desc">Palvelu hakee kohteen tiedot, yhdistää ne avoimeen dataan ja laskee kaikki tunnusluvut – alle 5 sekunnissa.</p>
+        <div class="step-mono">→ Kassavirta · Vuokrausriski · Remonttiriski · Palvelut · Kaavoitus</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Tee päätös luottavaisin mielin</div>
+        <p class="step-desc">Saat täydellisen sijoitusraportin. Vertaile kohteita rinnakkain tai seuraa portfoliossa.</p>
+        <div class="step-mono">→ Yksi URL. Koko analyysi.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section pricing" id="pricing">
+  <div class="section-label">// Hinnoittelu</div>
+  <h2 class="section-h">Yksinkertainen hinnoittelu</h2>
+  <p class="section-sub">Aloita ilmaiseksi. Päivitä kun olet valmis.</p>
+  <div class="price-grid">
+    <div class="price-card">
+      <div class="price-plan">Ilmainen</div>
+      <div class="price-num">0 €</div>
+      <div class="price-per">/ kuukausi, aina</div>
+      <ul class="price-feats">
+        <li>3 analyysiä / kk</li>
+        <li>Kassavirtalaskenta</li>
+        <li>Vuokrausriski-indeksi</li>
+        <li>Remonttiriski-arvio</li>
+      </ul>
+      <button class="price-btn" onclick="document.getElementById('signup').scrollIntoView({behavior:'smooth'})">Aloita ilmaiseksi</button>
+    </div>
+    <div class="price-card featured">
+      <div class="price-badge">Suosituin</div>
+      <div class="price-plan">Sijoittaja</div>
+      <div class="price-num">29 €</div>
+      <div class="price-per">/ kuukausi</div>
+      <ul class="price-feats">
+        <li>Rajaton analyysi</li>
+        <li>Palvelu- & kaavoitusanalyysi</li>
+        <li>Kohdehälytykset sähköpostiin</li>
+        <li>Kohteiden vertailu rinnakkain</li>
+        <li>AI-yhteenveto jokaisesta kohteesta</li>
+      </ul>
+      <button class="price-btn" onclick="document.getElementById('signup').scrollIntoView({behavior:'smooth'})">Ilmoittaudu kiinnostuneeksi</button>
+    </div>
+    <div class="price-card">
+      <div class="price-plan">Pro</div>
+      <div class="price-num">79 €</div>
+      <div class="price-per">/ kuukausi</div>
+      <ul class="price-feats">
+        <li>Kaikki Sijoittaja-tason ominaisuudet</li>
+        <li>Portfolio-näkymä</li>
+        <li>PDF-raportit</li>
+        <li>API-pääsy dataan</li>
+      </ul>
+      <button class="price-btn" onclick="document.getElementById('signup').scrollIntoView({behavior:'smooth'})">Ota yhteyttä</button>
+    </div>
+  </div>
+  <p class="price-footnote">Ei sitoutumista · Peruuta milloin tahansa · Ei luottokorttia ilmaisessa versiossa</p>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+  <div class="section-label">// Mitä sijoittajat sanovat</div>
+  <div class="testi-grid">
+    <div class="testi-item">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-quote">"Ennen käytin tunteja Excel-laskelmiin. Nyt saan saman analyysin viidessä sekunnissa. Remonttiriskiarvio on säästänyt rahaa."</p>
+      <div class="testi-author">— Mikael T., 8 sijoitusasuntoa, Helsinki</div>
+    </div>
+    <div class="testi-item">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-quote">"Kohdehälytykset ovat kultaa. Sain ilmoituksen Hervannasta minuutteja sen jälkeen kun se ilmestyi – ehdin ensimmäisten joukossa."</p>
+      <div class="testi-author">— Sanna K., sijoittaja, Tampere</div>
+    </div>
+    <div class="testi-item">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-quote">"Vuokrausriski-indeksi auttoi välttämään Mellunkylän kohteen. Sama raha meni Kallioon – ero kassavirrassa on 300 €/kk."</p>
+      <div class="testi-author">— Juhani R., aloitteleva sijoittaja</div>
+    </div>
+  </div>
+</section>
+
+<!-- SIGNUP -->
+<section class="signup" id="signup">
+  <div class="signup-inner">
+    <div class="signup-counter">
+      <div class="signup-counter-dot"></div>
+      <span class="signup-counter-num" id="signup-count">0</span>
+      <span>sijoittajaa jo listalla</span>
+    </div>
+    <h2 class="signup-h">Aloita <em>ilmaiseksi</em> tänään</h2>
+    <p class="signup-sub">Ilmoittaudu kiinnostuneeksi – saat kutsun ensimmäisten joukossa kun palvelu avautuu.</p>
+    <div id="signup-form-wrap">
+      <!-- Brevo Form -->
+      <style>
+        #sib-container { background-color: transparent !important; border: none !important; max-width: 480px !important; margin: 0 auto !important; }
+        #sib-container input { background: rgba(255,255,255,0.07) !important; border: 1px solid rgba(255,255,255,0.15) !important; color: #fff !important; border-radius: 4px !important; font-family: 'DM Sans', sans-serif !important; font-size: 14px !important; padding: 12px 14px !important; }
+        #sib-container input::placeholder { color: rgba(255,255,255,0.25) !important; }
+        .sib-form-block__button { background-color: #1a7a5a !important; border-radius: 4px !important; font-family: 'DM Sans', sans-serif !important; font-size: 14px !important; padding: 12px 22px !important; width: auto !important; }
+        .sib-form-block__button:hover { background-color: #155e46 !important; }
+        .sib-form { background: transparent !important; }
+        .sib-form .entry__label { color: rgba(255,255,255,0.6) !important; font-family: 'DM Sans', sans-serif !important; font-size: 13px !important; font-weight: 400 !important; }
+        .sib-form-block p { color: rgba(255,255,255,0.4) !important; font-family: 'DM Sans', sans-serif !important; font-size: 13px !important; }
+        .sib-form-block:first-child p { display: none; }
+        .entry__specification { color: rgba(255,255,255,0.2) !important; }
+        #success-message { background-color: rgba(78,207,158,0.1) !important; border-color: rgba(78,207,158,0.3) !important; color: #4ecf9e !important; max-width: 480px !important; margin: 0 auto !important; }
+        #error-message { max-width: 480px !important; margin: 0 auto !important; }
+        .sib-form-message-panel__inner-text { color: #4ecf9e !important; }
+      </style>
+      <div class="sib-form" style="text-align:center;background:transparent;">
+        <div id="sib-form-container" class="sib-form-container">
+          <div id="error-message" class="sib-form-message-panel" style="font-family:'DM Sans',sans-serif;font-size:14px;text-align:left;color:#661d1d;background-color:#ffeded;border-color:#ff4949;border-radius:4px;max-width:480px;">
+            <div class="sib-form-message-panel__text sib-form-message-panel__text--center">
+              <span class="sib-form-message-panel__inner-text">Jokin meni pieleen. Yritä uudelleen.</span>
+            </div>
+          </div>
+          <div id="success-message" class="sib-form-message-panel" style="font-family:'DM Sans',sans-serif;font-size:14px;text-align:left;color:#085229;background-color:#e7faf0;border-color:#13ce66;border-radius:4px;max-width:480px;">
+            <div class="sib-form-message-panel__text sib-form-message-panel__text--center">
+              <span class="sib-form-message-panel__inner-text">Olet listalla! 🎉 Lähetämme kutsun heti kun palvelu avautuu.</span>
+            </div>
+          </div>
+          <div id="sib-container" class="sib-container--large sib-container--vertical" style="text-align:center;background-color:transparent;border:none;direction:ltr">
+            <form id="sib-form" method="POST" action="https://7d4cfda9.sibforms.com/serve/MUIFAFJvYr_6E7Cnfs_jDCa5rJuTr4O2F9p32Fri8iokdHfSOiZndBZFUK_F74irOrS7CHxM9yEi0BIGYH83Q3RLumAD8JGiW6vOm_i2Rq-BBpgPXUAP_wMqe4d3dd1FOwQtEIpctqxfYtWImJLAEVxXYw3v8fuO6_-MdMhQmQuGysEWGqoT5n1yvsAi1R_lImZ5Reo8Jr7cMDMLpw==" data-type="subscription">
+              <div style="padding:8px 0;">
+                <div class="sib-input sib-form-block">
+                  <div class="form__entry entry_block">
+                    <div class="form__label-row">
+                      <div class="entry__field" style="max-width:480px;margin:0 auto;">
+                        <input class="input" type="text" id="EMAIL" name="EMAIL" autocomplete="off" value="" placeholder="sinun@email.fi" data-required="true" required style="width:100%"/>
+                      </div>
+                    </div>
+                    <label class="entry__error entry__error--primary" style="font-family:'DM Sans',sans-serif;font-size:13px;text-align:left;color:#661d1d;background-color:#ffeded;border-color:#ff4949;border-radius:4px;max-width:480px;margin:0 auto;display:block;"></label>
+                  </div>
+                </div>
+              </div>
+              <div style="padding:8px 0;">
+                <div class="sib-form-block" style="text-align:center;">
+                  <button class="sib-form-block__button sib-form-block__button-with-loader" style="font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:#FFFFFF;background-color:#1a7a5a;border-width:0;border-radius:4px;padding:13px 24px;" form="sib-form" type="submit">
+                    <svg class="icon clickable__icon progress-indicator__icon sib-hide-loader-icon" viewBox="0 0 512 512" style="width:16px;height:16px;margin-right:6px;">
+                      <path d="M460.116 373.846l-20.823-12.022c-5.541-3.199-7.54-10.159-4.663-15.874 30.137-59.886 28.343-131.652-5.386-189.946-33.641-58.394-94.896-95.833-161.827-99.676C261.028 55.961 256 50.751 256 44.352V20.309c0-6.904 5.808-12.337 12.703-11.982 83.556 4.306 160.163 50.864 202.11 123.677 42.063 72.696 44.079 162.316 6.031 236.832-3.14 6.148-10.75 8.461-16.728 5.01z" />
+                    </svg>
+                    Ilmoittaudu →
+                  </button>
+                </div>
+              </div>
+              <input type="text" name="email_address_check" value="" class="input--hidden" style="display:none">
+              <input type="hidden" name="locale" value="fi">
+            </form>
+          </div>
+        </div>
+      </div>
+      <p class="signup-note" style="margin-top:10px">Ei roskapostia · Peruuta milloin tahansa · 14 pv ilmainen kokeilu</p>
+    </div>
+    <div class="signup-success" id="signup-success" style="display:none">
+      <strong>Olet listalla! 🎉</strong>
+      <p id="signup-success-msg">Lähetämme sinulle kutsun heti kun palvelu avautuu.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Asuntoanalyytikko</div>
+  <div class="footer-links">
+    <a href="#">Tietosuoja</a>
+    <a href="#">Käyttöehdot</a>
+    <a href="mailto:hei@asuntoanalyytikko.fi">Ota yhteyttä</a>
+  </div>
+  <div class="footer-copy">© 2025 Asuntoanalyytikko</div>
+</footer>
+
+<script>
+// Smooth scroll for all anchor links
+document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+  a.addEventListener('click', function(e) {
+    var target = document.querySelector(a.getAttribute('href'));
+    if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+  });
+});
+
+</script>
+<link rel="stylesheet" href="https://sibforms.com/forms/end-form/build/sib-styles.css">
+<script>
+  window.REQUIRED_CODE_ERROR_MESSAGE = 'Please choose a country code';
+  window.LOCALE = 'fi';
+  window.EMAIL_INVALID_MESSAGE = "Syötä kelvollinen sähköpostiosoite.";
+  window.REQUIRED_ERROR_MESSAGE = "Tämä kenttä on pakollinen.";
+  window.GENERIC_INVALID_MESSAGE = "Syötetty tieto on virheellinen.";
+  var AUTOHIDE = Boolean(0);
+</script>
+<script defer src="https://sibforms.com/forms/end-form/build/main.js"></script>
+</body>
+</html>
